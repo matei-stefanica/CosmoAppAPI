@@ -1,3 +1,4 @@
+import { CONNREFUSED } from "dns";
 import express from "express";
 import { type Request, type Response } from 'express';
 import { existsSync, PathLike } from 'fs';
@@ -10,6 +11,17 @@ const port = 8000;
 const axios = require('axios')
 
 const filePath : PathLike = 'cached-response.json';
+
+interface APIResponse {
+  copyright: string;
+  date: string;
+  explanation: string;
+  hdurl: string;
+  media_type: string;
+  service_version: string;
+  title: string;
+  url: string;
+}
 
 
 app.use(express.json());
@@ -77,6 +89,19 @@ router.get('/cosmos', async(req : Request, res : Response) => {
     
 });
 
+router.get('/test', async(req : Request, res : Response) => {
+    try {
+        const response = await axios.get('https://apod.nasa.gov/apod/image/2607/red_sprite_700.jpg', {
+            responseType: "blob",
+        });
+        const imageUrl = URL.createObjectURL(response.data);
+        const imgElement = document.createElement("img");
+        imgElement.src = imageUrl;
+        res.json({ dataFromSub: response.data, additionalInfo: 'Hello from my endpoint' });
+    } catch (error) {
+        res.status(500).send('Error fetching data from NASA');
+    }
+});
 
 app.use('/', router);
 
