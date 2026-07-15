@@ -1,4 +1,3 @@
-import { CONNREFUSED } from "dns";
 import express from "express";
 import { type Request, type Response } from 'express';
 import { existsSync, PathLike } from 'fs';
@@ -11,17 +10,6 @@ const port = 8000;
 const axios = require('axios')
 
 const filePath : PathLike = 'cached-response.json';
-
-interface APIResponse {
-  copyright: string;
-  date: string;
-  explanation: string;
-  hdurl: string;
-  media_type: string;
-  service_version: string;
-  title: string;
-  url: string;
-}
 
 
 app.use(express.json());
