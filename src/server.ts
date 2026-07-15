@@ -44,7 +44,21 @@ router.get('/cosmos', async(req : Request, res : Response) => {
                 }
             });
 
-            res.send(response.data);
+            const urlToImage : string = response.dat.url;
+            const curlCommand : string = `curl -o "file.jpg" ` + urlToImage;
+
+            exec(curlCommand, (error : Error, stdout : string, stderr : Error) => {
+                if (error) {
+                    console.error(`Error: ${error.message}`);
+                    return res.status(500).send('Error executing curl');
+                }
+                if (stderr) {
+                    console.error(`stderr: ${stderr}`);
+                }
+                res.send(response.data);
+
+            });
+
         } catch (error) {
             res.status(500).send('Error fetching data from NASA');
         }
@@ -56,10 +70,7 @@ router.get('/cosmos', async(req : Request, res : Response) => {
             } else {
                 const cached_response = JSON.parse(data);
                 const urlToImage : string = cached_response.url;
-                console.log(urlToImage)
-
                 const curlCommand : string = `curl -o "file.jpg" ` + urlToImage;
-                console.log(curlCommand)
 
                 exec(curlCommand, (error : Error, stdout : string, stderr : Error) => {
                     if (error) {
