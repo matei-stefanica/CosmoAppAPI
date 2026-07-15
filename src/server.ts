@@ -96,12 +96,26 @@ router.get('/cosmos/photos/:requested_date', async(req : Request, res : Response
                 }
             });
             res.send(response.data)
+            const urlToImage : string = response.data[0].url;
+            const curlCommand : string = `curl -o "file_specific_day.jpg" ` + urlToImage;
+
+            exec(curlCommand, (error : Error, stdout : string, stderr : Error) => {
+                if (error) {
+                    console.error(`Error: ${error.message}`);
+                    return res.status(500).send('Error executing curl');
+                }
+                if (stderr) {
+                    console.error(`stderr: ${stderr}`);
+                }
+
+            });
 
         } catch (error) {
             console.log(error);
             res.status(500).send('Error fetching data from NASA');
         }
     }
+
     else {
         throw createHttpError(400, 'Invalid date format, you need to use "YYYY-MM-DD"');
     }
