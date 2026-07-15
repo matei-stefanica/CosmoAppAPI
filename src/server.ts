@@ -1,4 +1,3 @@
-import { CONNREFUSED } from "dns";
 import express from "express";
 import { type Request, type Response } from 'express';
 import { existsSync, PathLike } from 'fs';
@@ -6,22 +5,13 @@ import { existsSync, PathLike } from 'fs';
 import * as fs from 'fs';
 const { exec } = require('child_process');
 
+import createHttpError from 'http-errors';
+
 const app = express();
 const port = 8000;
 const axios = require('axios')
 
 const filePath : PathLike = 'cached-response.json';
-
-interface APIResponse {
-  copyright: string;
-  date: string;
-  explanation: string;
-  hdurl: string;
-  media_type: string;
-  service_version: string;
-  title: string;
-  url: string;
-}
 
 
 app.use(express.json());
@@ -90,17 +80,32 @@ router.get('/cosmos', async(req : Request, res : Response) => {
 });
 
 router.get('/test', async(req : Request, res : Response) => {
-    try {
-        const response = await axios.get('https://apod.nasa.gov/apod/image/2607/red_sprite_700.jpg', {
-            responseType: "blob",
-        });
-        const imageUrl = URL.createObjectURL(response.data);
-        const imgElement = document.createElement("img");
-        imgElement.src = imageUrl;
-        res.json({ dataFromSub: response.data, additionalInfo: 'Hello from my endpoint' });
-    } catch (error) {
-        res.status(500).send('Error fetching data from NASA');
+    res.send("bla")
+});
+
+
+router.get('/cosmos/photos/:requested_date', async(req : Request, res : Response) => {
+    const requested_date : string | string[] = req.params.requested_date
+    if (!isNaN(Date.parse(String(requested_date)))) {
+        try {
+            const response = await axios.get('https://api.nasa.gov/planetary/apod', {
+                params: {
+                    api_key: "jk4uiZkVB9zdL0f1fhrUAeaBwdK8Bl3hydnL8umn",
+                    start_date: String(requested_date),
+                    end_date: String(requested_date)
+                }
+            });
+            res.send(response.data)
+
+        } catch (error) {
+            console.log(error);
+            res.status(500).send('Error fetching data from NASA');
+        }
     }
+    else {
+        throw createHttpError(400, 'Invalid date format, you need to use "YYYY-MM-DD"');
+    }
+    
 });
 
 app.use('/', router);
