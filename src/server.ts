@@ -3,26 +3,25 @@ import { type Request, type Response } from 'express';
 import { existsSync, PathLike } from 'fs';
 
 import * as fs from 'fs';
-const { exec } = require('child_process');
+import dotenv from 'dotenv'
 
 const app = express();
 const port = 8000;
 const axios = require('axios')
 
 const FILEPATH : PathLike = 'cached-response.json';
-
-require('dotenv').config();
-
 const apiKey = process.env.API_KEY;
 
-function sendResponseForNewImageOfTheDay(req : Request, res : Response) : void {
+dotenv.config();
+
+async function sendResponseForNewImageOfTheDay(req : Request, res : Response) : Promise<void> {
     try {
-        const response = axios.get('https://api.nasa.gov/planetary/apod', {
+        const response = await axios.get('https://api.nasa.gov/planetary/apod', {
             params: {
                 api_key: apiKey
             }
         });
-        const stringRepresentationOfRespone : string | ArrayBufferView<ArrayBufferLike> = JSON.stringify(response.data, null);
+        const stringRepresentationOfRespone : string = JSON.stringify(response.data, null);
 
         fs.writeFile(FILEPATH, stringRepresentationOfRespone, (err) => {
             if (err) {
@@ -48,37 +47,29 @@ function sendResponseForCachedImageOfTheDay(req : Request, res : Response) : voi
             const urlToImage : string = cached_response.url;
             downloadImage(req, res, urlToImage);
             res.send(cached_response);
-
         }
     });
 }
 
-function downloadImage(req : Request, res : Response, urlToImage : string) {
-    const curlCommand : string = `curl -o "file.jpg" ` + urlToImage;
-
-    exec(curlCommand, (error : Error, stdout : string, stderr : Error) => {
-        if (error) {
-            console.error(`Error: ${error.message}`);
-            return res.status(500).send('Error executing curl');
-        }
-        if (stderr) {
-            console.error(`stderr: ${stderr}`);
-        }
-    });
-}
-
-app.use(express.json());
-const router = express.Router();
-router.get('/cosmos', async(req : Request, res : Response) => {
+async function decideresponseUsed(req : Request, res : Response) : Promise<void> {
     if (!existsSync(FILEPATH)) {
         sendResponseForNewImageOfTheDay(req, res);
     }
     else {
         sendResponseForCachedImageOfTheDay(req, res);
     }
-    
-});
+}
 
+async function downloadImage(req : Request, res : Response, urlToImage : string) {
+    const imageResponse = await axios.get(urlToImage, { responseType: 'arraybuffer' });
+    fs.writeFileSync(FILEPATH, Buffer.from(imageResponse.data, 'binary'));
+}
+
+app.use(express.json());
+const router = express.Router();
+router.get('/cosmos', async(req : Request, res : Response) => {
+    decideresponseUsed(req, res);
+});
 
 app.use('/', router);
 
