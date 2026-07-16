@@ -9,7 +9,7 @@ const app = express();
 const port = 8000;
 const axios = require('axios')
 
-const FILEPATH : PathLike = 'cached-response.json';
+const FILEPATH : string = 'cached-response.json';
 const apiKey = process.env.API_KEY;
 
 dotenv.config();
